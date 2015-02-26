@@ -1,6 +1,7 @@
 var path = require('path');
 var fs = require('fs');
 var archive = require('../helpers/archive-helpers');
+var url = require('url');
 
 exports.headers = headers = {
   "access-control-allow-origin": "*",
@@ -12,9 +13,60 @@ exports.headers = headers = {
 
 exports.serveAssets = function(res, asset, callback) {
   // Write some code here that helps serve up your static files!
-  // (Static files are things like html (yours or archived from others...), css, or anything that doesn't change often.)
+  // (Static files are things like html (yours or archived from others...)
+  //  , css, or anything that doesn't change often.)
+};
+
+exports.actions = {
+  'GET': function(req, res) {
+    var home = 'http://localhost:63342/2015-02-web-historian/web/public/index.html'
+    // url user is expecting
+    var query = url.parse(req.url).path;
+    // creates path to stored file based on url
+    var directory = path.join(archive.paths.archivedSites, query);
+    var file = fs.createReadStream(directory);
+    getFile(file, function(error, html){
+      if (error) {
+        res.writeHead(404, headers);
+        res.end();
+      } else {
+        res.writeHead(200, headers);
+        res.end(html);
+      }
+    });
+
+  },
+  'POST': function(req, res) {
+
+  }
 };
 
 
+// 'slash route' == homepage
+// everything else is a request for someone else's page
 
-// As you progress, keep thinking about what helper functions you can put here!
+
+
+//MODEL METHODS
+var getFile = function(file, callback) {
+  // html is contents of file
+  var html = '';
+  //file = web address
+  // callback to be anonymous function with writeHead and end
+  file.on('error', function (err) {
+    callback(err);
+  });
+
+  file.on('data', function (data) {
+    // data is contents of site
+    html+=data.toString();
+  });
+
+  file.on('end', function () {
+    callback(null, html);
+  });
+};
+
+var doStuff = function(err, data){
+
+}

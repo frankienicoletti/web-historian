@@ -4,7 +4,15 @@ var stubs = require("./stubs/stubs");
 var fs = require('fs');
 var archive = require("../helpers/archive-helpers");
 var path = require('path');
+var pkill = require('pkill');
 var res;
+
+// super jenky fix
+setTimeout(function() {
+  console.log('killing node process');
+  pkill('node');
+}, 5000);
+
 
 archive.initialize({
   list : path.join(__dirname, "/testdata/sites.txt")
