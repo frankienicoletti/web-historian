@@ -2,6 +2,7 @@ var path = require('path');
 var fs = require('fs');
 var archive = require('../helpers/archive-helpers');
 var url = require('url');
+var http = require('http');
 
 exports.headers = headers = {
   "access-control-allow-origin": "*",
@@ -19,11 +20,22 @@ exports.serveAssets = function(res, asset, callback) {
 
 exports.actions = {
   'GET': function(req, res) {
-    var home = 'http://localhost:63342/2015-02-web-historian/web/public/index.html'
-    // url user is expecting
     var query = url.parse(req.url).path;
-    // creates path to stored file based on url
-    var directory = path.join(archive.paths.archivedSites, query);
+    if (query === '/') {
+      exports.routes['/'](req, res);
+    } else {
+      exports.routes['*'](req, res);
+    }
+  },
+  'POST': function(req, res) {
+
+  }
+};
+
+exports.routes = {
+  '/': function(req, res) {
+    var directory = path.join(archive.paths['/'], 'index.html');
+    console.log(directory, "/");
     var file = fs.createReadStream(directory);
     getFile(file, function(error, html){
       if (error) {
@@ -34,10 +46,21 @@ exports.actions = {
         res.end(html);
       }
     });
-
   },
-  'POST': function(req, res) {
-
+  '*': function(req, res) {
+    var query = url.parse(req.url).path;
+    var directory = path.join(archive.paths.archivedSites, query);
+    var file = fs.createReadStream(directory);
+    getFile(file, function(error, html){
+      if (error) {
+        downloadURL(query, function() {});
+        res.writeHead(404, headers);
+        res.end();
+      } else {
+        res.writeHead(200, headers);
+        res.end(html);
+      }
+    });
   }
 };
 
@@ -67,6 +90,30 @@ var getFile = function(file, callback) {
   });
 };
 
-var doStuff = function(err, data){
+var downloadURL = function(url, callback) {
+  var fullURL = 'http:/'+url;
+  http.get(fullURL, function(res) {
+    res.on('data', function(data) {
+      console.log(data.toString());
+    });
+  });
 
-}
+
+};
+
+
+var addFile = function() {
+
+
+};
+
+
+// var file = fs.createWriteStream('./out.txt');
+
+// process.stdin.on('data', function(data) {
+//   file.write(data);
+// });
+// process.stdin.on('end', function() {
+//   file.end();
+// });
+// process.stdin.resume(); // stdin in paused by default
