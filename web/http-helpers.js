@@ -64,17 +64,26 @@ exports.actions = {
     exports.serveAssets(res, query, exports.sendResponse);
   },
   'POST': function(req, res) {
-    var site = req._postData.url;
-    archive.isUrlInList(site, function(exists){
-      if(!exists){
-        archive.paths.urlsList[site] = false;
-        fs.appendFile(archive.paths.list, site+"\n", 'utf8', function(err){
-          if (err) throw err;
-          console.log('done!');
-        });
-      }
-      exports.serveAssets(res, site, exports.sendResponse);
-    })
+    var site = "";
+    req.on('data', function(data) {
+      site+=data.toString();
+    });
+    req.on('end', function(data) {
+      site = site.split('=')[1];
+      archive.isUrlInList(site, function(exists) {
+        if (!exists) {
+          archive.paths.urlsList[site] = false;
+          fs.appendFile(archive.paths.list, site + "\n", 'utf8', function (err) {
+            if (err) console.error(err);
+            console.log('done!');
+          });
+          // downloadURL(site, function () {
+          //   console.log('wooo');
+          // });
+        }
+        exports.serveAssets(res, site, exports.sendResponse);
+      });
+    });
   }
 };
 
@@ -83,7 +92,10 @@ var downloadURL = function(url, callback) {
   var fullURL = 'http:/'+url;
   http.get(fullURL, function(res) {
     res.on('data', function(data) {
-      console.log(data.toString());
+      fs.writeFile(archive.paths.archivedSites + url, data, 'utf8', function(err){
+        if (err) throw err;
+        callback();
+      })
     });
     res.on('error', function(err) {
       console.log(err);
