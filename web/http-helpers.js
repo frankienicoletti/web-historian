@@ -12,11 +12,53 @@ exports.headers = headers = {
   'Content-Type': "text/html"
 };
 
-exports.serveAssets = function(res, asset, callback) {
-  // Write some code here that helps serve up your static files!
-  // (Static files are things like html (yours or archived from others...)
-  //  , css, or anything that doesn't change often.)
+//MODEL METHODS
+var getFile = function(file, callback) {
+  // html is contents of file
+  var html = '';
+  //file = web address
+  // callback to be anonymous function with writeHead and end
+  // file.on('error', function (err) {
+  //   callback(err);
+  // });
+
+  // file.on('data', function (data) {
+  //   // data is contents of site
+  //   html+=data.toString();
+  // });
+
+  // file.on('end', function () {
+  //   callback(null, html);
+  // });
 };
+
+//asset is directory
+exports.serveAssets = function(res, asset, callback) {
+  var publicDir = path.join(archive.paths.siteAssets, asset);
+  var archiveDir = path.join(archive.paths.archivedSites, asset);
+  //asset in in /public
+  fs.readFile(asset, 'utf8', function(err, data){
+    if (err) {
+      callback(err);
+    } else {
+      callback(err, data);
+    }
+  });
+    //serve the file
+  //else
+    //asset in /archive
+      //serve file
+    //is asset in list
+      //serve the loading page
+    // else 404
+};
+
+// 'slash route' == homepage
+// everything else is a request for someone else's page
+
+
+
+
 
 exports.actions = {
   'GET': function(req, res) {
@@ -32,12 +74,12 @@ exports.actions = {
   }
 };
 
+
 exports.routes = {
   '/': function(req, res) {
+    var query = url.parse(req.url).path;
     var directory = path.join(archive.paths['/'], 'index.html');
-    console.log(directory, "/");
-    var file = fs.createReadStream(directory);
-    getFile(file, function(error, html){
+    exports.serveAssets(res, query, function(error, html){
       if (error) {
         res.writeHead(404, headers);
         res.end();
@@ -49,11 +91,8 @@ exports.routes = {
   },
   '*': function(req, res) {
     var query = url.parse(req.url).path;
-    var directory = path.join(archive.paths.archivedSites, query);
-    var file = fs.createReadStream(directory);
-    getFile(file, function(error, html){
+    exports.serveAssets(res, query, function(error, html){
       if (error) {
-        downloadURL(query, function() {});
         res.writeHead(404, headers);
         res.end();
       } else {
@@ -64,56 +103,17 @@ exports.routes = {
   }
 };
 
-
-// 'slash route' == homepage
-// everything else is a request for someone else's page
-
-
-
-//MODEL METHODS
-var getFile = function(file, callback) {
-  // html is contents of file
-  var html = '';
-  //file = web address
-  // callback to be anonymous function with writeHead and end
-  file.on('error', function (err) {
-    callback(err);
-  });
-
-  file.on('data', function (data) {
-    // data is contents of site
-    html+=data.toString();
-  });
-
-  file.on('end', function () {
-    callback(null, html);
-  });
-};
-
 var downloadURL = function(url, callback) {
   var fullURL = 'http:/'+url;
   http.get(fullURL, function(res) {
     res.on('data', function(data) {
       console.log(data.toString());
     });
+    res.on('error', function(err) {
+      console.log(err);
+    });
+    res.on('end', function() {
+      console.log('end');
+    });
   });
-
-
 };
-
-
-var addFile = function() {
-
-
-};
-
-
-// var file = fs.createWriteStream('./out.txt');
-
-// process.stdin.on('data', function(data) {
-//   file.write(data);
-// });
-// process.stdin.on('end', function() {
-//   file.end();
-// });
-// process.stdin.resume(); // stdin in paused by default
