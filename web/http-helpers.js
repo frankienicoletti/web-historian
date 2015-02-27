@@ -12,97 +12,61 @@ exports.headers = headers = {
   'Content-Type': "text/html"
 };
 
-//MODEL METHODS
-var getFile = function(file, callback) {
-  // html is contents of file
-  var html = '';
-  //file = web address
-  // callback to be anonymous function with writeHead and end
-  // file.on('error', function (err) {
-  //   callback(err);
-  // });
-
-  // file.on('data', function (data) {
-  //   // data is contents of site
-  //   html+=data.toString();
-  // });
-
-  // file.on('end', function () {
-  //   callback(null, html);
-  // });
-};
-
-//asset is directory
-exports.serveAssets = function(res, asset, callback) {
+exports.serveAssets = function(res, asset, sendRes) {
+  if (asset === '/') {
+    asset = '/index.html';
+  }
   var publicDir = path.join(archive.paths.siteAssets, asset);
   var archiveDir = path.join(archive.paths.archivedSites, asset);
   //asset in in /public
-  fs.readFile(asset, 'utf8', function(err, data){
-    if (err) {
-      callback(err);
-    } else {
-      callback(err, data);
+  fs.readFile(publicDir, 'utf8', function(err, data){
+    if (err) {//not found in public, look in archive
+      fs.readFile(archiveDir, 'utf8', function(err, data){
+        if (err) {//not found in archive, 404 or loading
+
+        // get check the list
+        // client submits request for archive
+          // its not found in public or archive
+            // if its not in list
+              // 404
+            // serve loading html
+
+
+          publicDir = path.join(archive.paths.siteAssets, '/loading.html');
+          fs.readFile(publicDir, 'utf8', function(err, data) {
+            sendRes(null, data, res);
+          });
+        } else { //in archive
+          sendRes(null, data, res);
+        }
+      });
+    } else {//in public
+      sendRes(null, data, res);
     }
   });
-    //serve the file
-  //else
-    //asset in /archive
-      //serve file
-    //is asset in list
-      //serve the loading page
-    // else 404
 };
 
-// 'slash route' == homepage
-// everything else is a request for someone else's page
-
-
-
-
+exports.sendResponse = function(error, html, res) {
+  if (error) {
+    res.writeHead(404, headers);
+    res.end();
+  } else {
+    res.writeHead(200, headers);
+    res.end(html);
+  }
+};
 
 exports.actions = {
   'GET': function(req, res) {
     var query = url.parse(req.url).path;
-    if (query === '/') {
-      exports.routes['/'](req, res);
-    } else {
-      exports.routes['*'](req, res);
-    }
+    exports.serveAssets(res, query, exports.sendResponse);
   },
   'POST': function(req, res) {
 
   }
 };
 
-
-exports.routes = {
-  '/': function(req, res) {
-    var query = url.parse(req.url).path;
-    var directory = path.join(archive.paths['/'], 'index.html');
-    exports.serveAssets(res, query, function(error, html){
-      if (error) {
-        res.writeHead(404, headers);
-        res.end();
-      } else {
-        res.writeHead(200, headers);
-        res.end(html);
-      }
-    });
-  },
-  '*': function(req, res) {
-    var query = url.parse(req.url).path;
-    exports.serveAssets(res, query, function(error, html){
-      if (error) {
-        res.writeHead(404, headers);
-        res.end();
-      } else {
-        res.writeHead(200, headers);
-        res.end(html);
-      }
-    });
-  }
-};
-
+// for cron
 var downloadURL = function(url, callback) {
   var fullURL = 'http:/'+url;
   http.get(fullURL, function(res) {
@@ -117,3 +81,4 @@ var downloadURL = function(url, callback) {
     });
   });
 };
+

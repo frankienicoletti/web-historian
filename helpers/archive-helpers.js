@@ -13,7 +13,8 @@ exports.paths = {
   'siteAssets' : path.join(__dirname, '../web/public'),
   'archivedSites' : path.join(__dirname, '../archives/sites'),
   'list' : path.join(__dirname, '../archives/sites.txt'),
-  '/': path.join(__dirname, '../web/public')
+  '/': path.join(__dirname, '../web/public'),
+  'urlsList': {}
 };
 
 // Used for stubbing paths for jasmine tests, do not modify
@@ -26,17 +27,34 @@ exports.initialize = function(pathsObj){
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function(){
+exports.readListOfUrls = function(url, callback){
+  fs.readFile(exports.path.list, 'utf8', function(err, data) {
+    if (err) callback(err);
+    callback(null, data);
+  });
 };
 
-exports.isUrlInList = function(){
+//GET
+exports.isUrlInList = function(url, callback){
+  // if (exports.path.urlsList[url])
+  // return true
+  // else
+  // return false
 };
 
-exports.addUrlToList = function(){
+//POST
+exports.addUrlToList = function(url, callback){
+  // if (exports.path.urlsList[url])
+  // do nothing
+  // else
+  // exports.path.urlsList[url] = false;
 };
 
-exports.isURLArchived = function(){
+exports.isURLArchived = function(url, callback){
+  // if exports.path.urlsList[url]
+  // return true
+  // else return false
 };
 
-exports.downloadUrls = function(){
+exports.downloadUrls = function(url, callback){
 };
