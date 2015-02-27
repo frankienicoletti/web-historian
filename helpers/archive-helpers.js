@@ -24,11 +24,19 @@ exports.initialize = function(pathsObj){
   });
 };
 
-// The following function names are provided to you to suggest how you might
-// modularize your code. Keep it clean!
+exports.initializeArchive = function(callback) {
+  exports.readListOfUrls(function(err, data) {
+    if (err) throw err;
+    var dataArray = data.split('\n');
+    _.each(dataArray, function(url) {
+      exports.paths.urlsList[url] = false;
+    });
+  });
 
-exports.readListOfUrls = function(url, callback){
-  fs.readFile(exports.path.list, 'utf8', function(err, data) {
+};
+
+exports.readListOfUrls = function(callback){
+  fs.readFile(exports.paths.list, 'utf8', function(err, data) {
     if (err) callback(err);
     callback(null, data);
   });
@@ -36,10 +44,13 @@ exports.readListOfUrls = function(url, callback){
 
 //GET
 exports.isUrlInList = function(url, callback){
-  // if (exports.path.urlsList[url])
-  // return true
-  // else
-  // return false
+  // if undefined -> 404
+  if (exports.paths.urlsList[url] === undefined) {
+    callback(false);
+  } else {
+    callback(true);
+  }
+
 };
 
 //POST

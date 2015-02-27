@@ -24,20 +24,20 @@ exports.serveAssets = function(res, asset, sendRes) {
       fs.readFile(archiveDir, 'utf8', function(err, data){
         if (err) {//not found in archive, 404 or loading
 
-        // get check the list
-        // client submits request for archive
-          // its not found in public or archive
-            // if its not in list
-              // 404
-            // serve loading html
-
-
-          publicDir = path.join(archive.paths.siteAssets, '/loading.html');
-          fs.readFile(publicDir, 'utf8', function(err, data) {
-            sendRes(null, data, res);
+          archive.isUrlInList(asset, function(exists) {
+            if (exists) {
+              publicDir = path.join(archive.paths.siteAssets, '/loading.html');
+              fs.readFile(publicDir, 'utf8', function(err, data) {
+                sendRes(null, data, res, 302);
+              });
+            } else { //404
+              sendRes(err, null, res, 404);
+            }
           });
+
         } else { //in archive
           sendRes(null, data, res);
+          archive.paths.urlsList[asset] = true;
         }
       });
     } else {//in public
@@ -46,15 +46,17 @@ exports.serveAssets = function(res, asset, sendRes) {
   });
 };
 
-exports.sendResponse = function(error, html, res) {
+exports.sendResponse = function(error, html, res, code) {
+  code = code || 200;
   if (error) {
-    res.writeHead(404, headers);
+    res.writeHead(code, headers);
     res.end();
   } else {
-    res.writeHead(200, headers);
+    res.writeHead(code, headers);
     res.end(html);
   }
 };
+
 
 exports.actions = {
   'GET': function(req, res) {
@@ -62,7 +64,17 @@ exports.actions = {
     exports.serveAssets(res, query, exports.sendResponse);
   },
   'POST': function(req, res) {
-
+    var site = req._postData.url;
+    archive.isUrlInList(site, function(exists){
+      if(!exists){
+        archive.paths.urlsList[site] = false;
+        fs.appendFile(archive.paths.list, site+"\n", 'utf8', function(err){
+          if (err) throw err;
+          console.log('done!');
+        });
+      }
+      exports.serveAssets(res, site, exports.sendResponse);
+    })
   }
 };
 
@@ -81,4 +93,3 @@ var downloadURL = function(url, callback) {
     });
   });
 };
-
